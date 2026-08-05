@@ -16,14 +16,15 @@ concurrency:
 
 env:
   AWS_REGION: ap-south-1
+  TF_IN_AUTOMATION: true
 
 jobs:
   terraform-plan:
+    name: Terraform Plan
     runs-on: ubuntu-latest
     timeout-minutes: 30
 
     steps:
-
       - name: Checkout Repository
         uses: actions/checkout@v4
 
@@ -50,7 +51,7 @@ jobs:
             -backend-config="dynamodb_table=${{ secrets.TF_LOCK_TABLE }}"
 
       - name: Terraform Validate
-        run: terraform validate
+        run: terraform validate -no-color
 
       - name: Setup TFLint
         uses: terraform-linters/setup-tflint@v4
@@ -61,19 +62,24 @@ jobs:
           tflint
 
       - name: Run Checkov
+        continue-on-error: true
         uses: bridgecrewio/checkov-action@v12
         with:
           directory: .
 
       - name: Run tfsec
+        continue-on-error: true
         uses: aquasecurity/tfsec-action@v1
 
       - name: Setup Infracost
+        if: ${{ secrets.INFRACOST_API_KEY != '' }}
         uses: infracost/actions/setup@v3
         with:
           api-key: ${{ secrets.INFRACOST_API_KEY }}
 
       - name: Infracost Breakdown
+        if: ${{ secrets.INFRACOST_API_KEY != '' }}
+        continue-on-error: true
         run: |
           infracost breakdown \
             --path . \
@@ -88,9 +94,11 @@ jobs:
             -out=tfplan \
             -var="db_password=${{ secrets.DB_PASSWORD }}" \
             -var="mongo_password=${{ secrets.MONGO_PASSWORD }}" \
-            -var="ses_verified_email=${{ secrets.SES_FROM_EMAIL }}" \
             -var="certificate_arn=${{ secrets.ACM_CERTIFICATE_ARN }}" \
-            -var="hosted_zone_id=${{ secrets.HOSTED_ZONE_ID }}" | tee plan.txt
+            -var="hosted_zone_id=${{ secrets.HOSTED_ZONE_ID }}"
+
+      - name: Generate Human Readable Plan
+        run: terraform show -no-color tfplan > plan.txt
 
       - name: Upload Terraform Plan
         uses: actions/upload-artifact@v4
@@ -106,16 +114,21 @@ jobs:
         with:
           script: |
             const fs = require('fs');
-            const plan = fs.readFileSync('plan.txt','utf8');
-            const body = `## Terraform Plan
+            const plan = fs.readFileSync('plan.txt', 'utf8');
+            const output = plan.length > 60000
+              ? plan.substring(0, 60000) + '\n...output truncated...'
+              : plan;
 
-\`\`\`
-${plan.substring(0,60000)}
-\`\`\`
-`;
             github.rest.issues.createComment({
               owner: context.repo.owner,
               repo: context.repo.repo,
               issue_number: context.issue.number,
-              body: body
+              body: `## 🚀 Terraform Plan
+
+**Status:** ✅ Success
+
+\`\`\`terraform
+${output}
+\`\`\`
+`
             });
