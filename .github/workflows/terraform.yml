@@ -19,7 +19,7 @@ env:
   TF_VERSION: 1.5.0
 
 jobs:
-  # ── Validate & Security Scan ────────────────────────────────
+  # ── Validate & Security Scan ──────────────────────────────────
   validate:
     name: Validate & Security Scan
     runs-on: ubuntu-latest
@@ -83,15 +83,15 @@ jobs:
               issue_number: context.issue.number,
               owner: context.repo.owner,
               repo: context.repo.repo,
-              body: `## 🏗️ Terraform Validation\n| Check | Status |\n|---|---|\n| Format | ${{ steps.fmt.outcome == 'success' && '✅' || '❌' }} |\n| Init | ${{ steps.init.outcome == 'success' && '✅' || '❌' }} |\n| Validate | ${{ steps.validate.outcome == 'success' && '✅' || '❌' }} |\n| tfsec | ${{ steps.tfsec.outcome == 'success' && '✅' || '⚠️' }} |\n| checkov | ${{ steps.checkov.outcome == 'success' && '✅' || '⚠️' }} |`
+              body: `## Terraform Validation\n| Check | Status |\n|---|---|\n| Format | ${{ steps.fmt.outcome == 'success' && 'Pass' || 'Fail' }} |\n| Init | ${{ steps.init.outcome == 'success' && 'Pass' || 'Fail' }} |\n| Validate | ${{ steps.validate.outcome == 'success' && 'Pass' || 'Fail' }} |\n| tfsec | ${{ steps.tfsec.outcome == 'success' && 'Pass' || 'Warnings' }} |\n| checkov | ${{ steps.checkov.outcome == 'success' && 'Pass' || 'Warnings' }} |`
             });
 
-  # ── Plan (on PR) ────────────────────────────────────────────
+  # ── Plan ──────────────────────────────────────────────────────
   plan:
     name: Terraform Plan
     runs-on: ubuntu-latest
     needs: validate
-    if: github.event_name == 'pull_request' || github.event.inputs.action == 'plan'
+    if: github.event_name == 'pull_request' || github.event_name == 'push' || github.event.inputs.action == 'plan'
     permissions:
       contents: read
       id-token: write
@@ -150,15 +150,15 @@ jobs:
               issue_number: context.issue.number,
               owner: context.repo.owner,
               repo: context.repo.repo,
-              body: `## 📋 Terraform Plan\n\`\`\`hcl\n${truncated}\n\`\`\`\n*Outcome: ${{ steps.plan.outcome }}*`
+              body: `## Terraform Plan\n\`\`\`hcl\n${truncated}\n\`\`\`\n*Outcome: ${{ steps.plan.outcome }}*`
             });
 
-  # ── Apply (on merge to main) ────────────────────────────────
+  # ── Apply (manual workflow_dispatch only) ─────────────────────
   apply:
     name: Terraform Apply
     runs-on: ubuntu-latest
     needs: validate
-    if: github.ref == 'refs/heads/main' && github.event_name == 'push' || github.event.inputs.action == 'apply'
+    if: github.event.inputs.action == 'apply'
     environment: production
     permissions:
       contents: read
@@ -198,7 +198,7 @@ jobs:
       - name: Show outputs
         run: terraform output -json
 
-  # ── Destroy (manual only) ───────────────────────────────────
+  # ── Destroy (manual only) ─────────────────────────────────────
   destroy:
     name: Terraform Destroy
     runs-on: ubuntu-latest
