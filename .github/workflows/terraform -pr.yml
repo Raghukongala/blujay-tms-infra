@@ -31,7 +31,7 @@ jobs:
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v3
         with:
-          terraform_version: 1.5.8
+          terraform_version: 1.12.2
 
       - name: Terraform Format Check
         run: terraform fmt -check -recursive
@@ -101,7 +101,8 @@ jobs:
             -var="db_password=${{ secrets.DB_PASSWORD }}" \
             -var="mongo_password=${{ secrets.MONGO_PASSWORD }}" \
             -var="certificate_arn=${{ secrets.ACM_CERTIFICATE_ARN }}" \
-            -var="hosted_zone_id=${{ secrets.HOSTED_ZONE_ID }}"
+            -var="hosted_zone_id=${{ secrets.HOSTED_ZONE_ID }}" \
+            -var="aws_region=${{ env.AWS_REGION }}"
 
       - name: Generate Human Readable Plan
         run: terraform show -no-color tfplan > plan.txt
