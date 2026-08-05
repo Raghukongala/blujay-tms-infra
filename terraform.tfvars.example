@@ -1,0 +1,28 @@
+# Copy this to terraform.tfvars for local development (never commit terraform.tfvars)
+
+aws_region   = "ap-south-1"
+cluster_name = "blujay-tms-cluster"
+environment  = "prod"
+
+# Node group sizing
+node_instance_type = "t3.medium"
+desired_capacity   = 2
+min_size           = 1
+max_size           = 3
+
+# Databases
+db_instance_class    = "db.t3.micro"
+db_username          = "taskadmin"
+db_password          = "CHANGE_ME"
+
+redis_node_type      = "cache.t3.micro"
+
+mongo_username       = "mongoadmin"
+mongo_password       = "CHANGE_ME"
+docdb_instance_class = "db.t3.medium"
+
+# Optional — leave blank to skip ACM/Route53/SES
+domain_name        = "blujaytech.com"
+hosted_zone_id     = ""
+certificate_arn    = ""
+ses_verified_email = ""

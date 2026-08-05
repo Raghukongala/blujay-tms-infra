@@ -1,0 +1,64 @@
+resource "aws_docdb_subnet_group" "mongo" {
+  name       = "${var.cluster_name}-docdb-subnet-group"
+  subnet_ids = aws_subnet.private[*].id
+
+  tags = {
+    Name        = "${var.cluster_name}-docdb-subnet-group"
+    Environment = var.environment
+  }
+}
+
+resource "aws_security_group" "mongo" {
+  name        = "${var.cluster_name}-mongo-sg"
+  description = "Allow DocumentDB from EKS workers"
+  vpc_id      = aws_vpc.main.id
+
+  ingress {
+    from_port       = 27017
+    to_port         = 27017
+    protocol        = "tcp"
+    security_groups = [aws_security_group.workers.id]
+  }
+
+  egress {
+    from_port   = 0
+    to_port     = 0
+    protocol    = "-1"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  tags = {
+    Name        = "${var.cluster_name}-mongo-sg"
+    Environment = var.environment
+  }
+}
+
+resource "aws_docdb_cluster" "mongo" {
+  cluster_identifier      = "${var.cluster_name}-docdb"
+  engine                  = "docdb"
+  master_username         = var.mongo_username
+  master_password         = var.mongo_password
+  db_subnet_group_name    = aws_docdb_subnet_group.mongo.name
+  vpc_security_group_ids  = [aws_security_group.mongo.id]
+  skip_final_snapshot     = true
+  deletion_protection     = false
+  storage_encrypted       = true
+  backup_retention_period = 7
+
+  tags = {
+    Name        = "${var.cluster_name}-docdb"
+    Environment = var.environment
+  }
+}
+
+resource "aws_docdb_cluster_instance" "mongo" {
+  count              = 1
+  identifier         = "${var.cluster_name}-docdb-${count.index}"
+  cluster_identifier = aws_docdb_cluster.mongo.id
+  instance_class     = var.docdb_instance_class
+
+  tags = {
+    Name        = "${var.cluster_name}-docdb-${count.index}"
+    Environment = var.environment
+  }
+}
