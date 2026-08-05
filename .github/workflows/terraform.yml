@@ -19,7 +19,6 @@ env:
   TF_VERSION: 1.5.0
 
 jobs:
-  # ── Validate & Security Scan ──────────────────────────────────
   validate:
     name: Validate & Security Scan
     runs-on: ubuntu-latest
@@ -37,7 +36,8 @@ jobs:
           terraform_version: ${{ env.TF_VERSION }}
 
       - name: Debug ARN length
-        run: echo 'Length: '${#ARN}
+        run: |
+          echo "Length: ${#ARN}"
         env:
           ARN: ${{ secrets.AWS_ROLE_ARN }}
 
@@ -88,10 +88,9 @@ jobs:
               issue_number: context.issue.number,
               owner: context.repo.owner,
               repo: context.repo.repo,
-              body: `## Terraform Validation\n| Check | Status |\n|---|---|\n| Format | ${{ steps.fmt.outcome == 'success' && 'Pass' || 'Fail' }} |\n| Init | ${{ steps.init.outcome == 'success' && 'Pass' || 'Fail' }} |\n| Validate | ${{ steps.validate.outcome == 'success' && 'Pass' || 'Fail' }} |\n| tfsec | ${{ steps.tfsec.outcome == 'success' && 'Pass' || 'Warnings' }} |\n| checkov | ${{ steps.checkov.outcome == 'success' && 'Pass' || 'Warnings' }} |`
+              body: '## Terraform Validation\n| Check | Status |\n|---|---|\n| Format | ${{ steps.fmt.outcome }} |\n| Init | ${{ steps.init.outcome }} |\n| Validate | ${{ steps.validate.outcome }} |\n| tfsec | ${{ steps.tfsec.outcome }} |\n| checkov | ${{ steps.checkov.outcome }} |'
             });
 
-  # ── Plan ──────────────────────────────────────────────────────
   plan:
     name: Terraform Plan
     runs-on: ubuntu-latest
@@ -155,10 +154,9 @@ jobs:
               issue_number: context.issue.number,
               owner: context.repo.owner,
               repo: context.repo.repo,
-              body: `## Terraform Plan\n\`\`\`hcl\n${truncated}\n\`\`\`\n*Outcome: ${{ steps.plan.outcome }}*`
+              body: '## Terraform Plan\n```hcl\n' + truncated + '\n```'
             });
 
-  # ── Apply (manual workflow_dispatch only) ─────────────────────
   apply:
     name: Terraform Apply
     runs-on: ubuntu-latest
@@ -203,7 +201,6 @@ jobs:
       - name: Show outputs
         run: terraform output -json
 
-  # ── Destroy (manual only) ─────────────────────────────────────
   destroy:
     name: Terraform Destroy
     runs-on: ubuntu-latest
