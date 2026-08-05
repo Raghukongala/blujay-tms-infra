@@ -1,9 +1,3 @@
-locals {
-  acm_certificate_arn = var.certificate_arn != "" ? var.certificate_arn : (
-    length(aws_acm_certificate.app_cert) > 0 ? aws_acm_certificate.app_cert[0].arn : ""
-  )
-}
-
 # ── EKS OIDC Provider ───────────────────────────────────────────
 
 data "tls_certificate" "oidc_cert" {
