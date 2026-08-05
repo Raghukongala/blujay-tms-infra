@@ -34,26 +34,26 @@ resource "aws_security_group" "postgres" {
 }
 
 resource "aws_db_instance" "postgres" {
-  identifier              = "${var.cluster_name}-postgres"
-  engine                  = "postgres"
-  engine_version          = "15.4"
-  instance_class          = var.db_instance_class
-  allocated_storage       = 20
-  max_allocated_storage   = 100
-  storage_type            = "gp3"
-  storage_encrypted       = true
-  kms_key_id              = aws_kms_key.rds.arn
-  db_name                 = "taskdb"
-  username                = var.db_username
-  password                = var.db_password
-  db_subnet_group_name    = aws_db_subnet_group.postgres.name
-  vpc_security_group_ids  = [aws_security_group.postgres.id]
-  multi_az                = false
-  publicly_accessible     = false
-  skip_final_snapshot     = true
-  deletion_protection     = false
-  backup_retention_period = 0
-  auto_minor_version_upgrade = true
+  identifier                      = "${var.cluster_name}-postgres"
+  engine                          = "postgres"
+  engine_version                  = "15.4"
+  instance_class                  = var.db_instance_class
+  allocated_storage               = 20
+  max_allocated_storage           = 100
+  storage_type                    = "gp3"
+  storage_encrypted               = true
+  kms_key_id                      = aws_kms_key.rds.arn
+  db_name                         = "taskdb"
+  username                        = var.db_username
+  password                        = var.db_password
+  db_subnet_group_name            = aws_db_subnet_group.postgres.name
+  vpc_security_group_ids          = [aws_security_group.postgres.id]
+  multi_az                        = false
+  publicly_accessible             = false
+  skip_final_snapshot             = true
+  deletion_protection             = false
+  backup_retention_period         = 0
+  auto_minor_version_upgrade      = true
   enabled_cloudwatch_logs_exports = ["postgresql", "upgrade"]
 
   tags = {
