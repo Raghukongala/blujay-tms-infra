@@ -152,8 +152,7 @@ variable "docdb_instance_class" {
 }
 
 variable "grafana_admin_password" {
-  description = "Grafana admin password"
+  description = "Grafana admin password (DO NOT set a default in the repo; supply via terraform.tfvars, CI secrets, or AWS Secrets Manager)"
   type        = string
   sensitive   = true
-  default     = "Admin@Blujay2024!"
 }
