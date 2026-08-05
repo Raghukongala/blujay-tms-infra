@@ -150,3 +150,10 @@ variable "docdb_instance_class" {
   type        = string
   default     = "db.t3.medium"
 }
+
+variable "grafana_admin_password" {
+  description = "Grafana admin password"
+  type        = string
+  sensitive   = true
+  default     = "Admin@Blujay2024!"
+}

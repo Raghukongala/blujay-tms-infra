@@ -33,9 +33,19 @@ resource "aws_eks_cluster" "cluster" {
     security_group_ids      = [aws_security_group.cluster.id]
   }
 
+  encryption_config {
+    provider {
+      key_arn = aws_kms_key.eks.arn
+    }
+    resources = ["secrets"]
+  }
+
+  enabled_cluster_log_types = ["api", "audit", "authenticator", "controllerManager", "scheduler"]
+
   depends_on = [
     aws_iam_role_policy_attachment.eks_cluster_policy,
     aws_iam_role_policy_attachment.eks_service_policy,
+    aws_cloudwatch_log_group.eks,
   ]
 
   tags = {
@@ -91,8 +101,46 @@ resource "aws_eks_node_group" "workers" {
   instance_types = [var.node_instance_type]
   capacity_type  = "ON_DEMAND"
 
+  update_config {
+    max_unavailable = 1
+  }
+
+  launch_template {
+    id      = aws_launch_template.workers.id
+    version = aws_launch_template.workers.latest_version
+  }
+
   tags = {
     Name        = "${var.cluster_name}-workers"
     Environment = var.environment
+  }
+}
+
+resource "aws_launch_template" "workers" {
+  name_prefix   = "${var.cluster_name}-workers-"
+  instance_type = var.node_instance_type
+
+  block_device_mappings {
+    device_name = "/dev/xvda"
+    ebs {
+      volume_size           = 50
+      volume_type           = "gp3"
+      encrypted             = true
+      delete_on_termination = true
+    }
+  }
+
+  metadata_options {
+    http_endpoint               = "enabled"
+    http_tokens                 = "required"
+    http_put_response_hop_limit = 1
+  }
+
+  tag_specifications {
+    resource_type = "instance"
+    tags = {
+      Name        = "${var.cluster_name}-worker"
+      Environment = var.environment
+    }
   }
 }

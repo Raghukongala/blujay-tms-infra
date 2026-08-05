@@ -54,3 +54,32 @@ output "mongo_connection_string" {
   value       = "mongodb://${var.mongo_username}:${var.mongo_password}@${aws_docdb_cluster.mongo.endpoint}:27017/userdb?tls=true&tlsCAFile=rds-combined-ca-bundle.pem&replicaSet=rs0&readPreference=secondaryPreferred&retryWrites=false"
   sensitive   = true
 }
+
+output "secrets_manager_arns" {
+  description = "Secrets Manager ARNs for all services"
+  value = {
+    postgres = aws_secretsmanager_secret.postgres.arn
+    mongo    = aws_secretsmanager_secret.mongo.arn
+    redis    = aws_secretsmanager_secret.redis.arn
+  }
+}
+
+output "waf_web_acl_arn" {
+  description = "WAF Web ACL ARN"
+  value       = aws_wafv2_web_acl.main.arn
+}
+
+output "sns_alerts_arn" {
+  description = "SNS topic ARN for alerts"
+  value       = aws_sns_topic.alerts.arn
+}
+
+output "kms_key_arns" {
+  description = "KMS key ARNs"
+  value = {
+    rds        = aws_kms_key.rds.arn
+    docdb      = aws_kms_key.docdb.arn
+    eks        = aws_kms_key.eks.arn
+    cloudwatch = aws_kms_key.cloudwatch.arn
+  }
+}
