@@ -58,12 +58,6 @@ variable "max_size" {
   default     = 3
 }
 
-variable "app_namespace" {
-  description = "Kubernetes namespace for the application"
-  type        = string
-  default     = "blujay-tms"
-}
-
 variable "ecr_repo_prefix" {
   description = "ECR repository name prefix"
   type        = string
