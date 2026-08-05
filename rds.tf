@@ -48,18 +48,12 @@ resource "aws_db_instance" "postgres" {
   password                = var.db_password
   db_subnet_group_name    = aws_db_subnet_group.postgres.name
   vpc_security_group_ids  = [aws_security_group.postgres.id]
-  multi_az                = var.environment == "prod" ? true : false
+  multi_az                = false
   publicly_accessible     = false
-  skip_final_snapshot     = false
-  final_snapshot_identifier = "${var.cluster_name}-postgres-final"
-  deletion_protection     = var.environment == "prod" ? true : false
-  backup_retention_period = 7
-  backup_window           = "03:00-04:00"
-  maintenance_window      = "Mon:04:00-Mon:05:00"
+  skip_final_snapshot     = true
+  deletion_protection     = false
+  backup_retention_period = 0
   auto_minor_version_upgrade = true
-  performance_insights_enabled = true
-  monitoring_interval     = 60
-  monitoring_role_arn     = aws_iam_role.rds_monitoring.arn
   enabled_cloudwatch_logs_exports = ["postgresql", "upgrade"]
 
   tags = {
@@ -68,20 +62,3 @@ resource "aws_db_instance" "postgres" {
   }
 }
 
-resource "aws_iam_role" "rds_monitoring" {
-  name = "${var.cluster_name}-rds-monitoring-role"
-
-  assume_role_policy = jsonencode({
-    Version = "2012-10-17"
-    Statement = [{
-      Action    = "sts:AssumeRole"
-      Effect    = "Allow"
-      Principal = { Service = "monitoring.rds.amazonaws.com" }
-    }]
-  })
-}
-
-resource "aws_iam_role_policy_attachment" "rds_monitoring" {
-  role       = aws_iam_role.rds_monitoring.name
-  policy_arn = "arn:aws:iam::aws:policy/service-role/AmazonRDSEnhancedMonitoringRole"
-}

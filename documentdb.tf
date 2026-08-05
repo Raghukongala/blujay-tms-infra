@@ -40,13 +40,11 @@ resource "aws_docdb_cluster" "mongo" {
   master_password         = var.mongo_password
   db_subnet_group_name    = aws_docdb_subnet_group.mongo.name
   vpc_security_group_ids  = [aws_security_group.mongo.id]
-  skip_final_snapshot     = false
-  final_snapshot_identifier = "${var.cluster_name}-docdb-final"
-  deletion_protection     = var.environment == "prod" ? true : false
+  skip_final_snapshot     = true
+  deletion_protection     = false
   storage_encrypted       = true
   kms_key_id              = aws_kms_key.docdb.arn
-  backup_retention_period = 7
-  preferred_backup_window = "03:00-04:00"
+  backup_retention_period = 0
   enabled_cloudwatch_logs_exports = ["audit", "profiler"]
 
   tags = {
