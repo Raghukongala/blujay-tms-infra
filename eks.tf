@@ -98,8 +98,7 @@ resource "aws_eks_node_group" "workers" {
     max_size     = var.max_size
   }
 
-  instance_types = [var.node_instance_type]
-  capacity_type  = "ON_DEMAND"
+  capacity_type = "ON_DEMAND"
 
   update_config {
     max_unavailable = 1
