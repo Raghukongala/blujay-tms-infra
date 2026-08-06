@@ -16,10 +16,21 @@ db_username          = "taskadmin"
 db_password          = "CHANGE_ME"
 
 redis_node_type      = "cache.t3.micro"
+redis_ha_enabled     = true
 
-mongo_username       = "mongoadmin"
-mongo_password       = "CHANGE_ME"
-docdb_instance_class = "db.t3.medium"
+mongo_username              = "mongoadmin"
+mongo_password              = "CHANGE_ME"
+docdb_instance_class        = "db.t3.medium"
+docdb_backup_retention_days = 7
+docdb_deletion_protection   = true
+
+grafana_admin_password = "CHANGE_ME"
+
+# Production hardening (no open default — you must set this)
+db_multi_az              = true
+db_backup_retention_days = 7
+db_deletion_protection   = true
+eks_public_access_cidrs  = ["203.0.113.0/24"] # replace with your real CIDR(s)
 
 # Optional — leave blank to skip ACM/Route53/SES
 domain_name        = "blujaytech.com"

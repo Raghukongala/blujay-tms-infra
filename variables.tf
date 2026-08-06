@@ -150,3 +150,60 @@ variable "grafana_admin_password" {
   type        = string
   sensitive   = true
 }
+
+# ── Production Hardening Toggles ─────────────────────────────────
+# Set explicitly per environment in dev.tfvars / prod.tfvars. No
+# environment-based conditionals in resource files -- these are the
+# single source of truth so `terraform plan` output is self-explanatory.
+
+variable "db_multi_az" {
+  description = "Enable RDS Multi-AZ failover"
+  type        = bool
+  default     = true
+}
+
+variable "db_backup_retention_days" {
+  description = "RDS automated backup retention in days (0 disables backups)"
+  type        = number
+  default     = 7
+}
+
+variable "db_deletion_protection" {
+  description = "Enable RDS deletion protection"
+  type        = bool
+  default     = true
+}
+
+variable "docdb_backup_retention_days" {
+  description = "DocumentDB automated backup retention in days (0 disables backups)"
+  type        = number
+  default     = 7
+}
+
+variable "docdb_deletion_protection" {
+  description = "Enable DocumentDB deletion protection"
+  type        = bool
+  default     = true
+}
+
+variable "redis_ha_enabled" {
+  description = "Enable Redis multi-node replication with automatic failover"
+  type        = bool
+  default     = true
+}
+
+variable "eks_public_access_cidrs" {
+  description = <<-EOT
+    CIDR blocks allowed to reach the EKS public API endpoint.
+    Required -- there is no open (0.0.0.0/0) default. Populate with your
+    office/VPN CIDRs. CI runners also need access; either add GitHub's
+    published Actions IP ranges, front CI through a static-IP NAT/proxy,
+    or move to self-hosted runners inside the VPC and set this to [].
+  EOT
+  type        = list(string)
+
+  validation {
+    condition     = length(var.eks_public_access_cidrs) > 0
+    error_message = "eks_public_access_cidrs must not be empty. Set it explicitly in your .tfvars file -- there is no open default."
+  }
+}

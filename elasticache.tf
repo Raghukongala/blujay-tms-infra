@@ -37,13 +37,13 @@ resource "aws_elasticache_replication_group" "redis" {
   replication_group_id       = "${var.cluster_name}-redis"
   description                = "Redis for notification-service"
   node_type                  = var.redis_node_type
-  num_cache_clusters         = 1
+  num_cache_clusters         = var.redis_ha_enabled ? 2 : 1
   port                       = 6379
   subnet_group_name          = aws_elasticache_subnet_group.redis.name
   security_group_ids         = [aws_security_group.redis.id]
   at_rest_encryption_enabled = true
   transit_encryption_enabled = true
-  automatic_failover_enabled = false
+  automatic_failover_enabled = var.redis_ha_enabled
 
   tags = {
     Name        = "${var.cluster_name}-redis"

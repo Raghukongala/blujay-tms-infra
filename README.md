@@ -32,9 +32,43 @@ Terraform infrastructure for the Blujay Task Management Platform on AWS.
 | `TF_LOCK_TABLE` | `blujay-tms-tf-lock` |
 | `DB_PASSWORD` | RDS PostgreSQL password |
 | `MONGO_PASSWORD` | DocumentDB password |
+| `GRAFANA_ADMIN_PASSWORD` | Grafana admin login (required — no default in code) |
 | `SES_FROM_EMAIL` | (optional) SES verified email |
 | `ACM_CERTIFICATE_ARN` | (optional) existing ACM cert ARN |
 | `HOSTED_ZONE_ID` | (optional) Route53 hosted zone ID |
+
+## GitHub Actions Variables Required
+
+Settings → Secrets and variables → Actions → **Variables** tab (not Secrets — this isn't sensitive):
+
+| Variable | Description |
+|---|---|
+| `TF_VERSION` | Terraform version, e.g. `1.12.2`. Read by both `terraform-pr.yml` and `terraform-deploy.yml` so plan and apply can never run on different Terraform versions. |
+
+## Production Environment Protection (required)
+
+`terraform-deploy.yml`'s `apply` job runs under the `production` GitHub Environment. For it to actually gate deploys:
+
+1. Settings → Environments → create (or edit) an environment named `production`.
+2. Enable **Required reviewers** and add at least one person other than the PR author.
+3. Under **Deployment branches and tags**, restrict to `main` only.
+
+Without this, the workflow-level branch guard is your only protection — the environment gate is what makes an actual human approve the exact reviewed plan before it touches prod.
+
+## Provider Lock File
+
+`.terraform.lock.hcl` is currently gitignored, meaning every CI run can pick up a new provider version within the `~> 5.0` AWS provider constraint and produce an unexpected plan diff. Generate and commit it deliberately:
+
+```bash
+terraform init -upgrade
+git add -f .terraform.lock.hcl   # remove .terraform.lock.hcl from .gitignore first
+```
+
+Bump it via an explicit PR (`terraform init -upgrade`) when you want a new provider version, not implicitly on every CI run. This repo doesn't include a generated lock file yet — that step needs to run somewhere with real network access to the Terraform registry.
+
+## Two IAM Policy Files
+
+`inline-policy.json` and `github-actions-deploy-role-policy.json` currently contain identical least-privilege permissions for the GitHub Actions deploy role. Having both invites drift (they diverged once already — a wildcard KMS resource crept into one but not the other). Confirm which one is actually attached to the IAM role in AWS and delete the other, or keep both in sync deliberately.
 
 ## Required AWS Role Permissions
 
@@ -65,6 +99,13 @@ Minimum required permissions include:
 
 ## Pipeline
 
-- PR → validate + tfsec + checkov + plan (posted as PR comment)
-- Merge to main → auto apply
-- Manual destroy via workflow_dispatch
+**`terraform-pr.yml`** — on every PR to `main`:
+1. `validate` job: `fmt`, `validate`, TFLint, Checkov (blocking on HIGH/CRITICAL), Trivy config scan (blocking on HIGH/CRITICAL).
+2. `plan` job: plans **both** `dev` and `prod` state, using each environment's `.tfvars`, and posts both as separate PR comments — so reviewers see the real prod diff before merge, not just dev's.
+
+**`terraform-deploy.yml`** — on push to `main` (or manual `workflow_dispatch`, branch-guarded to `main` only):
+1. `guard` job: hard-fails if not running on `main`.
+2. `plan` job: plans against `blujay/prod/terraform.tfstate`, uploads the plan file as a build artifact. If there are no changes, the pipeline stops here — no empty apply runs.
+3. `apply` job: gated by the `production` GitHub Environment (required reviewer + branch restriction, see below). Downloads the **exact plan artifact** from step 2 and applies it with `terraform apply tfplan` — what gets approved is guaranteed to be what executes, with no chance of drift between review and apply.
+
+Both workflows are pinned to the same Terraform version via the `TF_VERSION` repository variable — never hardcode a version directly in either workflow file again.

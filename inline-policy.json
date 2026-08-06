@@ -190,7 +190,7 @@
         "kms:ListAliases"
       ],
       "Resource": [
-        "*",
+        "arn:aws:kms:ap-south-1:035885606770:key/*",
         "arn:aws:kms:ap-south-1:035885606770:alias/blujay-tms*"
       ]
     },
