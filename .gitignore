@@ -1,11 +1,20 @@
 .terraform/
-.terraform.lock.hcl
+# .terraform.lock.hcl is intentionally NOT ignored -- commit it so CI
+# can't silently pick up a new provider version. Generate it locally
+# with `terraform init -upgrade` and commit deliberately when bumping.
 *.tfstate
 *.tfstate.backup
 *.tfplan
 tfplan
 plan_output.txt
 *.tfvars
+# dev.tfvars and prod.tfvars are intentionally tracked -- they hold only
+# non-secret per-environment config (cluster_name, sizing, HA toggles).
+# db_password/mongo_password/grafana_admin_password are placeholders here
+# and are ALWAYS overridden by real -var flags sourced from GitHub
+# Actions secrets in CI. Never put a real credential in either file.
+!dev.tfvars
+!prod.tfvars
 !terraform.tfvars.example
 .env
 override.tf

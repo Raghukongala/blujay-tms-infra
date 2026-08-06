@@ -1,9 +1,3 @@
-locals {
-  acm_certificate_arn = var.certificate_arn != "" ? var.certificate_arn : (
-    length(aws_acm_certificate.app_cert) > 0 ? aws_acm_certificate.app_cert[0].arn : ""
-  )
-}
-
 # ── EKS OIDC Provider ───────────────────────────────────────────
 
 data "tls_certificate" "oidc_cert" {
@@ -89,9 +83,9 @@ resource "helm_release" "aws_lb_controller" {
 # ── ACM Certificate (auto-create if no cert ARN provided) ───────
 
 resource "aws_acm_certificate" "app_cert" {
-  count             = var.certificate_arn == "" && var.hosted_zone_id != "" ? 1 : 0
-  domain_name       = var.domain_name
-  validation_method = "DNS"
+  count                     = var.certificate_arn == "" && var.hosted_zone_id != "" ? 1 : 0
+  domain_name               = var.domain_name
+  validation_method         = "DNS"
   subject_alternative_names = ["www.${var.domain_name}"]
 
   tags = {
@@ -111,8 +105,8 @@ resource "aws_route53_record" "app_cert_validation" {
 }
 
 resource "aws_acm_certificate_validation" "app_cert" {
-  count           = var.certificate_arn == "" && var.hosted_zone_id != "" ? 1 : 0
-  certificate_arn = aws_acm_certificate.app_cert[0].arn
+  count                   = var.certificate_arn == "" && var.hosted_zone_id != "" ? 1 : 0
+  certificate_arn         = aws_acm_certificate.app_cert[0].arn
   validation_record_fqdns = [aws_route53_record.app_cert_validation[0].fqdn]
 }
 
